@@ -19,9 +19,16 @@ from agno.os import AgentOS
 
 def get_weather(city: str) -> str:
     """Get current weather for a city."""
-    url = f"https://wttr.in/{city}?format=j1"
-    data = json.loads(urllib.request.urlopen(url).read())
-    return json.dumps(data)
+    geo = json.loads(urllib.request.urlopen(
+        f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1"
+    ).read())
+    lat = geo["results"][0]["latitude"]
+    lon = geo["results"][0]["longitude"]
+    weather = json.loads(urllib.request.urlopen(
+        f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+        f"&current=temperature_2m,wind_speed_10m,relative_humidity_2m"
+    ).read())
+    return json.dumps({"city": city, "current": weather["current"]})
 
 
 agent = Agent(
