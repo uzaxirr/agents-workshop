@@ -32,4 +32,4 @@ if __name__ == "__main__":
         import uvicorn
         uvicorn.run(app, host="0.0.0.0", port=8000)
     else:
-        agent.print_response("What is the stock price of Apple?", stream=True)
+        agent.print_response("Top 5 trending AI tools in 2025", stream=True)
