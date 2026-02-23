@@ -34,9 +34,10 @@ python 01_first_agent.py --serve
 | 2 | `02_agentos.py` | Same agent deployed with AgentOS |
 | 3 | `03_tools_instructions.py` | DuckDuckGo search with instructions |
 | 4 | `04_custom_tool.py` | Write your own tool (weather) |
-| 5 | `05_mcp_playwright.py` | MCP: browser automation with Playwright |
-| 6 | `06_mcp_github.py` | MCP: GitHub hosted server |
-| 7 | `07_calorie_counter.py` | Live demo: calorie counter with AgentOS |
+| 5 | `05_memory.py` | Give your agent memory across sessions |
+| 6 | `06_mcp_playwright.py` | MCP: browser automation with Playwright |
+| 7 | `07_mcp_github.py` | MCP: GitHub hosted server |
+| 8 | `08_calorie_counter.py` | Live demo: calorie counter with AgentOS |
 
 ## Links
 
