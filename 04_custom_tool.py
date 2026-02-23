@@ -10,6 +10,7 @@ Or as a web app:
 
 import json
 import sys
+import urllib.parse
 import urllib.request
 
 from agno.agent import Agent
@@ -19,8 +20,9 @@ from agno.os import AgentOS
 
 def get_weather(city: str) -> str:
     """Get current weather for a city."""
+    encoded_city = urllib.parse.quote(city)
     geo = json.loads(urllib.request.urlopen(
-        f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1"
+        f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_city}&count=1"
     ).read())
     lat = geo["results"][0]["latitude"]
     lon = geo["results"][0]["longitude"]
