@@ -36,8 +36,9 @@ python 01_first_agent.py --serve
 | 4 | `04_custom_tool.py` | Write your own tool (weather) |
 | 5 | `05_memory.py` | Give your agent memory across sessions |
 | 6 | `06_mcp_playwright.py` | MCP: browser automation with Playwright |
-| 7 | `07_mcp_github.py` | MCP: GitHub hosted server |
-| 8 | `08_calorie_counter.py` | Live demo: calorie counter with AgentOS |
+| 7 | `07_mcp_filesystem.py` | MCP: explore files on your machine |
+| 8 | `08_mcp_github.py` | MCP: GitHub hosted server |
+| 9 | `09_calorie_counter.py` | Live demo: calorie counter with AgentOS |
 
 ## Links
 
