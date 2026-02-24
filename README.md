@@ -5,7 +5,13 @@ All code snippets from the workshop by **Uzair Ali**.
 ## Setup
 
 ```bash
-pip install agno anthropic openai duckduckgo-search
+# Create a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install agno + your model provider
+pip install agno anthropic   # or: pip install agno openai
+pip install duckduckgo-search  # for the search tool example
 ```
 
 For MCP examples:
@@ -30,7 +36,9 @@ python 01_first_agent.py --serve
 
 | # | File | What it does |
 |---|------|-------------|
-| 1 | `01_first_agent.py` | Your first agent — 3 lines of real code |
+| 1 | `01_first_agent.py` | Your first agent — Anthropic (Claude) |
+| 1b | `01_first_agent_openai.py` | Same agent — OpenAI (GPT-4o-mini) |
+| 1c | `01_first_agent_gemini.py` | Same agent — Google (Gemini) |
 | 2 | `02_agentos.py` | Same agent deployed with AgentOS |
 | 3 | `03_tools_instructions.py` | DuckDuckGo search with instructions |
 | 4 | `04_custom_tool.py` | Write your own tool (weather) |
