@@ -546,7 +546,15 @@
     <div class="slide-label fade-up fade-up-1">Workshop</div>
     <h1 class="slide-title fade-up fade-up-2">AI Agents in Python</h1>
     <p class="slide-subtitle fade-up fade-up-3">Build agents that think, use tools, and take action</p>
-    <div class="title-badge fade-up fade-up-4">
+    <div style="display: flex; gap: 20px; justify-content: center; margin-top: 24px;" class="fade-up fade-up-4">
+      <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-white); border: 1.5px solid #E5E5E5; border-radius: 10px; padding: 10px 18px; font-size: 16px; font-weight: 600;">
+        <span style="font-size: 20px;">&#128013;</span> Python 3.9+ installed
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-white); border: 1.5px solid #E5E5E5; border-radius: 10px; padding: 10px 18px; font-size: 16px; font-weight: 600;">
+        <span style="font-size: 20px;">&#128273;</span> Your LLM API key handy
+      </div>
+    </div>
+    <div class="title-badge fade-up fade-up-5">
       <span>Uzair Ali</span>
     </div>
     <div class="title-qr fade-up fade-up-5">
@@ -759,15 +767,15 @@
       <div class="setup-step fade-up fade-up-2">
         <div class="setup-number">1</div>
         <div class="setup-content">
-          Install Agno<br>
-          <code>pip install agno</code>
+          Create a virtual environment<br>
+          <code>python -m venv .venv</code> &nbsp;then&nbsp; <code>source .venv/bin/activate</code>
         </div>
       </div>
       <div class="setup-step fade-up fade-up-3">
         <div class="setup-number">2</div>
         <div class="setup-content">
-          Install a model provider<br>
-          <code>pip install anthropic</code> &nbsp;or&nbsp; <code>pip install openai</code> &nbsp;or&nbsp; <code>pip install google-genai</code>
+          Install Agno + a model provider<br>
+          <code>pip install agno anthropic</code> &nbsp;or&nbsp; <code>pip install agno openai</code>
         </div>
       </div>
       <div class="setup-step fade-up fade-up-4">
@@ -788,23 +796,70 @@
 
   <!-- ====== SLIDE 6: YOUR FIRST AGENT ====== -->
   <div class="slide">
-    <h2 class="slide-title fade-up fade-up-1">Your First Agent</h2>
-    <div class="code-frame fade-up fade-up-2">
-      <div class="code-titlebar">
-        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
-      </div>
-      <div class="code-body">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 20px;">Your First Agent</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+      <div class="code-frame fade-up fade-up-2" style="margin: 0; max-width: 100%;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          <span style="margin-left: auto; font-size: 12px; color: #888; font-family: 'JetBrains Mono', monospace;">Anthropic</span>
+        </div>
+        <div class="code-body">
 <pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
 <span class="kw">from</span> agno.models.anthropic <span class="kw">import</span> <span class="cl">Claude</span>
 
 <span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
-    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span>
+        <span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span>
+    <span class="op">),</span>
     <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
 <span class="op">)</span>
-<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span><span class="st">"Write a haiku about programming"</span><span class="op">)</span></pre>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span>
+    <span class="st">"Write a haiku about programming"</span>
+<span class="op">)</span></pre>
+        </div>
+      </div>
+      <div class="code-frame fade-up fade-up-3" style="margin: 0; max-width: 100%;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          <span style="margin-left: auto; font-size: 12px; color: #888; font-family: 'JetBrains Mono', monospace;">OpenAI</span>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.openai <span class="kw">import</span> <span class="cl">OpenAIChat</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">OpenAIChat</span><span class="op">(</span>
+        <span class="vr">id</span><span class="op">=</span><span class="st">"gpt-4o-mini"</span>
+    <span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span>
+    <span class="st">"Write a haiku about programming"</span>
+<span class="op">)</span></pre>
+        </div>
+      </div>
+      <div class="code-frame fade-up fade-up-4" style="margin: 0; max-width: 100%;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          <span style="margin-left: auto; font-size: 12px; color: #888; font-family: 'JetBrains Mono', monospace;">Google</span>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.google <span class="kw">import</span> <span class="cl">Gemini</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Gemini</span><span class="op">(</span>
+        <span class="vr">id</span><span class="op">=</span><span class="st">"gemini-2.0-flash"</span>
+    <span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span>
+    <span class="st">"Write a haiku about programming"</span>
+<span class="op">)</span></pre>
+        </div>
       </div>
     </div>
-    <p class="code-note fade-up fade-up-3">3 lines of real code. That's your first agent.</p>
+    <p class="code-note fade-up fade-up-5" style="margin-top: 16px;">Same 3 lines. Just swap the model. That's model-agnostic.</p>
   </div>
 
   <!-- ====== SLIDE 7: SEE IT IN ACTION — AGENTOS ====== -->
