@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents in Python — Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E8470B;
+    --red-light: #FF6B3D;
+    --red-glow: rgba(232, 71, 11, 0.12);
+    --bg: #FAFAFA;
+    --bg-white: #FFFFFF;
+    --text: #0A0A0A;
+    --text-secondary: #555555;
+    --code-bg: #0F1117;
+    --code-surface: #181A24;
+    --code-border: #2A2D3A;
+    --slide-transition: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ SLIDE ENGINE ============ */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 6vh 8vw;
+    opacity: 0; transform: translateX(40px);
+    pointer-events: none;
+    transition: opacity var(--slide-transition), transform var(--slide-transition);
+    will-change: opacity, transform;
+    background: var(--bg);
+  }
+
+  .slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+  .slide.exit-left { opacity: 0; transform: translateX(-40px); }
+  .slide.exit-right { opacity: 0; transform: translateX(40px); }
+
+  /* ============ NAVIGATION ============ */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 48px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 3vw; z-index: 100;
+    background: linear-gradient(to top, rgba(250,250,250,0.95), rgba(250,250,250,0.6));
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+
+  .nav-name { font-weight: 600; font-size: 13px; color: var(--text-secondary); }
+
+  .slide-counter {
+    font-size: 13px; font-weight: 500;
+    color: var(--text-secondary); font-variant-numeric: tabular-nums;
+  }
+
+  .progress-track {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 3px; background: rgba(0,0,0,0.06); z-index: 100;
+  }
+
+  .progress-fill {
+    height: 100%; background: var(--red);
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* ============ TYPOGRAPHY ============ */
+  .slide-title {
+    font-size: clamp(38px, 5vw, 64px); font-weight: 800;
+    letter-spacing: -2px; line-height: 1.05; margin-bottom: 40px;
+  }
+
+  .slide-subtitle {
+    font-size: clamp(16px, 2vw, 22px); font-weight: 400;
+    color: var(--text-secondary); line-height: 1.5;
+  }
+
+  .slide-label {
+    font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    font-size: 15px; color: var(--red); margin-bottom: 16px;
+  }
+
+  /* ============ ACCENT BULLETS ============ */
+  .accent-list { display: flex; flex-direction: column; gap: 24px; margin: 12px 0; }
+
+  .accent-item {
+    display: flex; align-items: flex-start; gap: 20px;
+    font-size: clamp(17px, 2vw, 22px); font-weight: 500; line-height: 1.45;
+  }
+
+  .accent-bar {
+    flex-shrink: 0; width: 4px; min-height: 28px; height: 100%;
+    border-radius: 4px; background: var(--red); margin-top: 2px;
+  }
+
+  /* ============ CODE BLOCKS ============ */
+  .code-frame {
+    background: var(--code-bg); border-radius: 14px; padding: 0;
+    margin: 28px 0 12px; overflow: hidden;
+    border: 1px solid var(--code-border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.12);
+    max-width: 780px;
+  }
+
+  .code-titlebar {
+    display: flex; align-items: center; gap: 7px;
+    padding: 14px 18px; background: var(--code-surface);
+    border-bottom: 1px solid var(--code-border);
+  }
+
+  .code-dot { width: 11px; height: 11px; border-radius: 50%; }
+  .code-dot.r { background: #FF5F57; }
+  .code-dot.y { background: #FFBD2E; }
+  .code-dot.g { background: #28CA42; }
+
+  .code-body { padding: 22px 24px; overflow-x: auto; }
+
+  .code-body pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(14px, 1.4vw, 16px);
+    line-height: 1.65; color: #D4D8E8; white-space: pre; tab-size: 4;
+  }
+
+  .kw { color: #C792EA; }
+  .fn { color: #82AAFF; }
+  .st { color: #C3E88D; }
+  .cm { color: #7B8599; }
+  .vr { color: #F8C555; }
+  .op { color: #89DDFF; }
+  .bl { color: #F07178; }
+  .cl { color: #FFCB6B; }
+  .dc { color: #82AAFF; font-style: italic; }
+
+  .code-note {
+    font-size: 16px; color: var(--text-secondary);
+    font-weight: 500; margin-top: 8px; font-style: italic;
+  }
+
+  /* ============ TITLE SLIDE ============ */
+  .title-slide {
+    justify-content: center; align-items: center;
+    text-align: center; padding: 8vh 10vw;
+  }
+
+  .title-slide .slide-title {
+    font-size: clamp(48px, 7vw, 96px);
+    letter-spacing: -3px; margin-bottom: 16px;
+  }
+
+  .title-badge {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: var(--text); color: white;
+    padding: 10px 22px; border-radius: 100px;
+    font-size: 15px; font-weight: 500; margin-top: 32px;
+  }
+
+  .title-qr {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    margin-top: 36px;
+    background: var(--bg-white);
+    padding: 20px 28px 16px;
+    border-radius: 16px;
+    border: 2px solid #E5E5E5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+
+  .title-qr img {
+    width: 160px; height: 160px; border-radius: 8px;
+  }
+
+  .title-qr-label {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    letter-spacing: 0.3px;
+  }
+
+  .title-qr-sublabel {
+    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    margin-top: -4px;
+  }
+
+  .title-qr-label a {
+    color: var(--red); text-decoration: none;
+  }
+
+  /* ============ ARCHITECTURE ============ */
+  .arch2 { display: flex; flex-direction: column; align-items: center; gap: 0; width: 100%; }
+
+  .arch2-top {
+    display: flex; align-items: center; justify-content: center;
+    gap: 32px; width: 100%;
+  }
+
+  .arch2-col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .arch2-col-label {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+  }
+
+  .arch2-box {
+    background: var(--bg-white); border: 1.5px solid #E5E5E5;
+    border-radius: 16px; padding: 20px 24px;
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  }
+
+  .arch2-icon-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    width: 64px;
+  }
+
+  .arch2-icon-box {
+    width: 52px; height: 52px; border-radius: 12px;
+    background: #F3F3F3; display: flex; align-items: center; justify-content: center;
+  }
+
+  .arch2-icon-box svg { width: 24px; height: 24px; opacity: 0.7; }
+
+  .arch2-icon-label { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+
+  .arch2-arrow { font-size: 28px; color: #BBB; flex-shrink: 0; margin-top: 28px; }
+
+  .arch2-agent-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    margin-top: 0;
+  }
+
+  .arch2-agent-box {
+    width: 80px; height: 80px; border-radius: 18px;
+    background: white; border: 2px solid #E5E5E5;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+
+  .arch2-agent-icon {
+    width: 48px; height: 48px;
+    position: relative;
+  }
+
+  .arch2-agent-icon svg { width: 100%; height: 100%; }
+
+  .arch2-orbit-1 {
+    transform-origin: center;
+    animation: orbit1 6s linear infinite;
+  }
+
+  .arch2-orbit-2 {
+    transform-origin: center;
+    animation: orbit2 8s linear infinite;
+  }
+
+  @keyframes orbit1 { to { transform: rotate(360deg); } }
+  @keyframes orbit2 { to { transform: rotate(-360deg); } }
+
+  /* bracket connector */
+  .arch2-connector {
+    display: flex; flex-direction: column; align-items: center;
+    margin-top: 0;
+  }
+
+  .arch2-conn-line { width: 2px; height: 20px; background: #DDD; }
+
+  .arch2-conn-bracket {
+    width: 340px; height: 16px; position: relative;
+  }
+
+  .arch2-conn-bracket::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 16px; border-left: 2px solid #DDD; border-right: 2px solid #DDD;
+    border-bottom: 2px solid #DDD; border-radius: 0 0 8px 8px;
+  }
+
+  .arch2-conn-drops {
+    display: flex; justify-content: space-between; width: 340px;
+    padding: 0 0;
+  }
+
+  .arch2-conn-drop { width: 2px; height: 16px; background: #DDD; }
+
+  /* bottom cards */
+  .arch2-bottom {
+    display: flex; gap: 16px; justify-content: center;
+    margin-top: 0; flex-wrap: nowrap;
+  }
+
+  .arch2-card {
+    background: var(--bg-white); border: 1.5px solid #E5E5E5;
+    border-radius: 14px; padding: 18px 20px; width: 170px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  }
+
+  .arch2-card-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: #F3F3F3; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 2px;
+  }
+
+  .arch2-card-icon svg { width: 22px; height: 22px; opacity: 0.6; }
+
+  .arch2-card-title { font-size: 16px; font-weight: 700; }
+  .arch2-card-sub { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* tools mini-grid */
+  .arch2-tools-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    width: 100%;
+  }
+
+  .arch2-tool-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 8px 4px;
+    background: #F3F3F3; border-radius: 8px;
+  }
+
+  .arch2-tool-item svg { width: 18px; height: 18px; opacity: 0.6; }
+
+  .arch2-tool-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: center; line-height: 1.3; }
+
+  /* ============ TWO-COL ============ */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .two-col .code-frame { max-width: 100%; }
+
+  /* ============ FEATURE GRID ============ */
+  .feature-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px; margin: 12px 0;
+  }
+
+  .feature-card {
+    background: var(--bg-white); border: 1.5px solid #E5E5E5;
+    border-radius: 12px; padding: 22px 20px;
+    transition: border-color 0.2s;
+  }
+
+  .feature-card:hover { border-color: var(--red); }
+
+  .feature-card-icon { font-size: 28px; margin-bottom: 10px; }
+
+  .feature-card-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+
+  .feature-card-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.45; }
+
+  /* ============ STAT ROW ============ */
+  .stat-row { display: flex; gap: 40px; margin-top: 28px; }
+
+  .stat-item { text-align: center; }
+
+  .stat-value {
+    font-size: 32px; font-weight: 800; letter-spacing: -1px;
+    color: var(--red);
+  }
+
+  .stat-label { font-size: 15px; color: var(--text-secondary); font-weight: 500; margin-top: 2px; }
+
+  /* ============ SETUP SLIDE ============ */
+  .setup-steps { display: flex; flex-direction: column; gap: 20px; margin: 12px 0; }
+
+  .setup-step {
+    display: flex; align-items: flex-start; gap: 16px;
+  }
+
+  .setup-number {
+    flex-shrink: 0; width: 32px; height: 32px;
+    border-radius: 50%; background: var(--red); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; margin-top: 2px;
+  }
+
+  .setup-content { font-size: 18px; font-weight: 500; line-height: 1.5; }
+
+  .setup-content code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--code-bg); color: #C3E88D;
+    padding: 3px 10px; border-radius: 6px; font-size: 15px;
+  }
+
+  /* ============ DEMO SLIDE ============ */
+  .demo-slide {
+    justify-content: center; align-items: center;
+    text-align: center; position: relative; overflow: hidden;
+  }
+
+  .demo-prompt {
+    font-size: clamp(28px, 4.5vw, 56px); font-weight: 800;
+    letter-spacing: -2px; margin-bottom: 16px; line-height: 1.1;
+  }
+
+  .demo-prompt .highlight { color: var(--red); }
+
+  .demo-sub { font-size: clamp(16px, 2vw, 22px); color: var(--text-secondary); font-weight: 400; }
+
+  .demo-cursor {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--code-bg); color: #C8CCD8;
+    padding: 14px 28px; border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(14px, 1.8vw, 20px);
+    margin-top: 36px; border: 1px solid var(--code-border);
+  }
+
+  .demo-cursor .blink {
+    display: inline-block; width: 2px; height: 1.2em;
+    background: var(--red); animation: cursorBlink 1s step-end infinite; margin-left: 2px;
+  }
+
+  @keyframes cursorBlink { 50% { opacity: 0; } }
+
+  .demo-bg-glyph {
+    position: absolute; font-size: 280px; font-weight: 800;
+    color: rgba(232, 71, 11, 0.04);
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    pointer-events: none; z-index: 0; user-select: none;
+  }
+
+  .demo-slide > *:not(.demo-bg-glyph) { position: relative; z-index: 1; }
+
+  /* ============ AGENTOS SLIDE ============ */
+  .os-features {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin: 16px 0 24px; max-width: 600px;
+  }
+
+  .os-feature {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: 500;
+  }
+
+  .os-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red); flex-shrink: 0;
+  }
+
+  .os-url {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 600; color: var(--red);
+    background: var(--red-glow); padding: 8px 20px;
+    border-radius: 8px; margin: 8px 0 20px;
+  }
+
+  /* ============ CLOSING ============ */
+  .next-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin: 20px 0 32px; max-width: 680px;
+  }
+
+  .next-card {
+    background: var(--bg-white); border: 1.5px solid #E5E5E5;
+    border-radius: 12px; padding: 18px 20px;
+  }
+
+  .next-card-number {
+    font-size: 13px; font-weight: 700; color: var(--red);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+  }
+
+  .next-card-title { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .next-card-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.45; }
+
+  .closing-row { display: flex; gap: 28px; margin-top: 16px; align-items: flex-start; justify-content: center; }
+
+  .closing-qr-card {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: var(--bg-white); border: 1.5px solid #E5E5E5;
+    border-radius: 14px; padding: 16px 20px 14px;
+    min-width: 130px;
+  }
+
+  .closing-qr-card img { width: 100px; height: 100px; border-radius: 6px; }
+
+  .closing-qr-label { font-size: 14px; font-weight: 700; color: var(--text); }
+
+  .closing-qr-sub {
+    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .closing-qr-card.highlight {
+    border-color: var(--red); background: linear-gradient(135deg, rgba(232,71,11,0.04), rgba(232,71,11,0.08));
+  }
+
+  .closing-thanks { font-size: clamp(32px, 4vw, 52px); font-weight: 800; letter-spacing: -1.5px; }
+
+  .closing-cta {
+    font-size: 18px; font-weight: 500; color: var(--text-secondary);
+    margin-top: 8px; line-height: 1.5;
+  }
+
+  .closing-cta strong { color: var(--text); }
+
+  /* ============ KEYBOARD HINT ============ */
+  .key-hint {
+    position: fixed; bottom: 56px; right: 3vw;
+    font-size: 11px; color: #BBB;
+    display: flex; align-items: center; gap: 6px;
+    z-index: 100; transition: opacity 0.4s;
+  }
+
+  .key-hint kbd {
+    background: #F0F0F0; border: 1px solid #DDD;
+    border-radius: 4px; padding: 2px 6px;
+    font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600;
+  }
+
+  .key-hint.hidden { opacity: 0; }
+
+  /* ============ ANIMATIONS ============ */
+  .slide.active .fade-up { animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .slide.active .fade-up-1 { animation-delay: 0.1s; }
+  .slide.active .fade-up-2 { animation-delay: 0.2s; }
+  .slide.active .fade-up-3 { animation-delay: 0.3s; }
+  .slide.active .fade-up-4 { animation-delay: 0.4s; }
+  .slide.active .fade-up-5 { animation-delay: 0.5s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .touch-left, .touch-right {
+    position: fixed; top: 0; bottom: 48px; width: 20vw; z-index: 50; cursor: pointer;
+  }
+  .touch-left { left: 0; }
+  .touch-right { right: 0; }
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+
+<div class="deck" id="deck">
+
+  <!-- ====== SLIDE 1: TITLE ====== -->
+  <div class="slide title-slide active">
+    <div class="slide-label fade-up fade-up-1">Workshop</div>
+    <h1 class="slide-title fade-up fade-up-2">AI Agents in Python</h1>
+    <p class="slide-subtitle fade-up fade-up-3">Build agents that think, use tools, and take action</p>
+    <div class="title-badge fade-up fade-up-4">
+      <span>Uzair Ali</span>
+    </div>
+    <div class="title-qr fade-up fade-up-5">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=https%3A%2F%2Fgithub.com%2Fuzaxirr%2Fagents-workshop&color=0A0A0A&bgcolor=FFFFFF" alt="QR Code to workshop code">
+      <div class="title-qr-label"><a href="https://github.com/uzaxirr/agents-workshop" target="_blank">Scan for All Code Snippets</a></div>
+      <div class="title-qr-sublabel">or visit: <a href="https://is.gd/ns_agents" target="_blank" style="color: var(--red); font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; text-decoration: none;">is.gd/ns_agents</a></div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 2: WHAT IS AN AGENT? ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1">What is an Agent?</h2>
+    <div class="accent-list">
+      <div class="accent-item fade-up fade-up-2">
+        <div class="accent-bar"></div>
+        <div>Software where the <strong>LLM controls</strong> the execution flow</div>
+      </div>
+      <div class="accent-item fade-up fade-up-3">
+        <div class="accent-bar"></div>
+        <div>Agent = <strong>LLM + tools + instructions</strong></div>
+      </div>
+      <div class="accent-item fade-up fade-up-4">
+        <div class="accent-bar"></div>
+        <div>Analyzes information, makes decisions, acts <strong>autonomously</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 3: ARCHITECTURE ====== -->
+  <div class="slide" style="padding-top: 4vh; padding-bottom: 4vh;">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(32px,4vw,48px); margin-bottom: 24px;">What is an Agent?</h2>
+    <div class="arch2">
+      <!-- Top row: Input → Agent → Output -->
+      <div class="arch2-top fade-up fade-up-2">
+        <!-- Input -->
+        <div class="arch2-col">
+          <div class="arch2-col-label">Input</div>
+          <div class="arch2-box">
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></div>
+              <div class="arch2-icon-label">Text</div>
+            </div>
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+              <div class="arch2-icon-label">Images</div>
+            </div>
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></div>
+              <div class="arch2-icon-label">Audio</div>
+            </div>
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polygon points="10,9 16,12 10,15"/></svg></div>
+              <div class="arch2-icon-label">Video</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arrow -->
+        <div class="arch2-arrow">&#x2192;</div>
+
+        <!-- Agent -->
+        <div class="arch2-agent-wrap">
+          <div class="arch2-col-label">Agent</div>
+          <div class="arch2-agent-box">
+            <div class="arch2-agent-icon">
+              <svg viewBox="0 0 48 48" fill="none">
+                <!-- core -->
+                <circle cx="24" cy="24" r="5" fill="#E8470B"/>
+                <circle cx="24" cy="24" r="8" stroke="#E8470B" stroke-width="1" opacity="0.3"/>
+                <!-- orbit 1 — tilted ring with node -->
+                <g class="arch2-orbit-1">
+                  <ellipse cx="24" cy="24" rx="18" ry="8" stroke="#E8470B" stroke-width="1.5" opacity="0.5" transform="rotate(-30 24 24)"/>
+                  <circle cx="40" cy="18" r="3" fill="#E8470B" opacity="0.8"/>
+                </g>
+                <!-- orbit 2 — opposite tilt with node -->
+                <g class="arch2-orbit-2">
+                  <ellipse cx="24" cy="24" rx="18" ry="8" stroke="#E8470B" stroke-width="1.5" opacity="0.35" transform="rotate(50 24 24)"/>
+                  <circle cx="10" cy="16" r="2.5" fill="#E8470B" opacity="0.6"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arrow -->
+        <div class="arch2-arrow">&#x2192;</div>
+
+        <!-- Output -->
+        <div class="arch2-col">
+          <div class="arch2-col-label">Output</div>
+          <div class="arch2-box">
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></div>
+              <div class="arch2-icon-label">Text</div>
+            </div>
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+              <div class="arch2-icon-label">Images</div>
+            </div>
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></div>
+              <div class="arch2-icon-label">Audio</div>
+            </div>
+            <div class="arch2-icon-item">
+              <div class="arch2-icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polygon points="10,9 16,12 10,15"/></svg></div>
+              <div class="arch2-icon-label">Video</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bracket connector from Agent down -->
+      <div class="arch2-connector fade-up fade-up-3">
+        <div class="arch2-conn-line"></div>
+        <div class="arch2-conn-bracket"></div>
+        <div class="arch2-conn-drops">
+          <div class="arch2-conn-drop"></div>
+          <div class="arch2-conn-drop"></div>
+          <div class="arch2-conn-drop"></div>
+        </div>
+      </div>
+
+      <!-- Bottom row: Memory, Knowledge, Tools -->
+      <div class="arch2-bottom fade-up fade-up-4">
+        <!-- Memory -->
+        <div class="arch2-card">
+          <div class="arch2-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <div class="arch2-card-title">Memory</div>
+          <div class="arch2-card-sub">Session History<br>User Memory</div>
+        </div>
+
+        <!-- Knowledge -->
+        <div class="arch2-card">
+          <div class="arch2-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 20,7 20,17 12,22 4,17 4,7"/><line x1="12" y1="22" x2="12" y2="12"/><polyline points="20,7 12,12 4,7"/></svg>
+          </div>
+          <div class="arch2-card-title">Knowledge</div>
+          <div class="arch2-card-sub">PDFs, docs ..<br>Few-shot learning</div>
+        </div>
+
+        <!-- Tools -->
+        <div class="arch2-card" style="width: 200px;">
+          <div class="arch2-tools-grid">
+            <div class="arch2-tool-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+              <div class="arch2-tool-label">Read messages</div>
+            </div>
+            <div class="arch2-tool-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+              <div class="arch2-tool-label">Generate Video</div>
+            </div>
+            <div class="arch2-tool-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <div class="arch2-tool-label">Search Web</div>
+            </div>
+            <div class="arch2-tool-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <div class="arch2-tool-label">Send email</div>
+            </div>
+          </div>
+          <div class="arch2-card-title">Tools</div>
+          <div class="arch2-card-sub">Applications</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 4: WHAT IS AGNO? ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1">What is Agno?</h2>
+    <div class="accent-list" style="margin-bottom: 24px;">
+      <div class="accent-item fade-up fade-up-2">
+        <div class="accent-bar"></div>
+        <div>A <strong>lightweight, open-source</strong> Python framework for building AI agents</div>
+      </div>
+      <div class="accent-item fade-up fade-up-3">
+        <div class="accent-bar"></div>
+        <div><strong>Model-agnostic</strong> &mdash; works with OpenAI, Anthropic, Google, local models, and more</div>
+      </div>
+      <div class="accent-item fade-up fade-up-4">
+        <div class="accent-bar"></div>
+        <div>Batteries included: <strong>50+ built-in tools</strong>, knowledge bases, memory, teams, workflows</div>
+      </div>
+    </div>
+    <div class="feature-grid fade-up fade-up-5">
+      <div class="feature-card">
+        <div class="feature-card-icon">&#9889;</div>
+        <div class="feature-card-title">Fast</div>
+        <div class="feature-card-desc">Agent creation in ~2&mu;s. No bloated abstractions.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128268;</div>
+        <div class="feature-card-title">Modular</div>
+        <div class="feature-card-desc">Swap models, tools, storage with one line change.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128640;</div>
+        <div class="feature-card-title">Production-ready</div>
+        <div class="feature-card-desc">Built-in FastAPI server, sessions, auth, monitoring.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 5: GET STARTED ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(32px,4vw,52px);">Get Started</h2>
+    <div class="setup-steps">
+      <div class="setup-step fade-up fade-up-2">
+        <div class="setup-number">1</div>
+        <div class="setup-content">
+          Install Agno<br>
+          <code>pip install agno</code>
+        </div>
+      </div>
+      <div class="setup-step fade-up fade-up-3">
+        <div class="setup-number">2</div>
+        <div class="setup-content">
+          Install a model provider<br>
+          <code>pip install anthropic</code> &nbsp;or&nbsp; <code>pip install openai</code> &nbsp;or&nbsp; <code>pip install google-genai</code>
+        </div>
+      </div>
+      <div class="setup-step fade-up fade-up-4">
+        <div class="setup-number">3</div>
+        <div class="setup-content">
+          Set your API key<br>
+          <code>export ANTHROPIC_API_KEY=sk-...</code>
+        </div>
+      </div>
+      <div class="setup-step fade-up fade-up-5">
+        <div class="setup-number">4</div>
+        <div class="setup-content">
+          Write 5 lines of Python. Done.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 6: YOUR FIRST AGENT ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1">Your First Agent</h2>
+    <div class="code-frame fade-up fade-up-2">
+      <div class="code-titlebar">
+        <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+      </div>
+      <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.anthropic <span class="kw">import</span> <span class="cl">Claude</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span><span class="st">"Write a haiku about programming"</span><span class="op">)</span></pre>
+      </div>
+    </div>
+    <p class="code-note fade-up fade-up-3">3 lines of real code. That's your first agent.</p>
+  </div>
+
+  <!-- ====== SLIDE 7: SEE IT IN ACTION — AGENTOS ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,52px);">See It in Action</h2>
+    <div class="accent-item fade-up fade-up-2" style="font-size: 19px; margin-bottom: 12px;">
+      <div class="accent-bar"></div>
+      <div>Same agent, <strong>3 new lines</strong> &mdash; now it's a web app with a full chat UI</div>
+    </div>
+    <div class="two-col" style="gap: 36px; align-items: start;">
+      <div>
+        <div class="code-frame fade-up fade-up-3" style="margin-top: 0; max-width: 100%;">
+          <div class="code-titlebar">
+            <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          </div>
+          <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.anthropic <span class="kw">import</span> <span class="cl">Claude</span>
+<span class="kw">from</span> agno.os <span class="kw">import</span> <span class="cl">AgentOS</span>  <span class="cm"># + new</span>
+
+<span class="cm"># Same agent as before</span>
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+
+<span class="cm"># Wrap it in AgentOS  + new</span>
+<span class="vr">app</span> <span class="op">=</span> <span class="cl">AgentOS</span><span class="op">(</span>
+    <span class="vr">id</span><span class="op">=</span><span class="st">"my-first-agent"</span><span class="op">,</span>
+    <span class="vr">agents</span><span class="op">=[</span><span class="vr">agent</span><span class="op">],</span>
+<span class="op">).</span><span class="fn">get_app</span><span class="op">()</span>
+
+<span class="kw">if</span> <span class="vr">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span><span class="op">:</span>
+    <span class="kw">import</span> uvicorn
+    uvicorn<span class="op">.</span><span class="fn">run</span><span class="op">(</span><span class="vr">app</span><span class="op">,</span> <span class="vr">host</span><span class="op">=</span><span class="st">"0.0.0.0"</span><span class="op">,</span> <span class="vr">port</span><span class="op">=</span><span class="vr">8000</span><span class="op">)</span></pre>
+          </div>
+        </div>
+        <div class="code-frame fade-up fade-up-4" style="margin-top: 12px; max-width: 100%;">
+          <div class="code-titlebar">
+            <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          </div>
+          <div class="code-body" style="padding: 14px 24px;">
+<pre style="color: #28CA42;">$ python app.py</pre>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="os-url fade-up fade-up-3">os.agno.com</div>
+        <div class="os-features fade-up fade-up-4">
+          <div class="os-feature"><div class="os-dot"></div> Chat UI &amp; Playground</div>
+          <div class="os-feature"><div class="os-dot"></div> Session Management</div>
+          <div class="os-feature"><div class="os-dot"></div> Memory &amp; Knowledge</div>
+          <div class="os-feature"><div class="os-dot"></div> Monitoring &amp; Metrics</div>
+          <div class="os-feature"><div class="os-dot"></div> Team &amp; Workflow Support</div>
+          <div class="os-feature"><div class="os-dot"></div> One-command Deploy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 8: WHAT ARE TOOLS? (EXPLAINER) ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1">What are Tools?</h2>
+    <div class="accent-list" style="margin-bottom: 28px;">
+      <div class="accent-item fade-up fade-up-2">
+        <div class="accent-bar"></div>
+        <div>LLMs are smart, but they <strong>can't do things</strong> in the real world on their own</div>
+      </div>
+      <div class="accent-item fade-up fade-up-3">
+        <div class="accent-bar"></div>
+        <div>Tools are <strong>Python functions</strong> you give to the agent &mdash; so it <em>can</em> take action</div>
+      </div>
+      <div class="accent-item fade-up fade-up-4">
+        <div class="accent-bar"></div>
+        <div>The agent <strong>decides on its own</strong> when to call a tool and what arguments to pass</div>
+      </div>
+    </div>
+    <div class="feature-grid fade-up fade-up-5">
+      <div class="feature-card">
+        <div class="feature-card-icon">&#127760;</div>
+        <div class="feature-card-title">Search the Web</div>
+        <div class="feature-card-desc">Google, DuckDuckGo, Hacker News, Wikipedia</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128230;</div>
+        <div class="feature-card-title">Use APIs</div>
+        <div class="feature-card-desc">Slack, GitHub, databases, any REST API</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128221;</div>
+        <div class="feature-card-title">Read &amp; Write Files</div>
+        <div class="feature-card-desc">PDFs, CSVs, images, code files</div>
+      </div>
+    </div>
+    <p class="code-note fade-up fade-up-5" style="margin-top: 16px;">Think of tools as the agent's hands. The LLM is the brain &mdash; tools let it interact with the world.</p>
+  </div>
+
+  <!-- ====== SLIDE 8: TOOLS + INSTRUCTIONS CODE ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 24px;">Tools + Instructions in Code</h2>
+    <div class="two-col">
+      <div>
+        <div class="accent-list">
+          <div class="accent-item fade-up fade-up-2" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div><strong>Tools:</strong> Python functions that can do... anything</div>
+          </div>
+          <div class="accent-item fade-up fade-up-3" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Search the web, generate images, send emails</div>
+          </div>
+          <div class="accent-item fade-up fade-up-4" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div><strong>Instructions:</strong> Tell the agent how to behave</div>
+          </div>
+        </div>
+      </div>
+      <div class="code-frame fade-up fade-up-3" style="margin-top: 0;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.anthropic <span class="kw">import</span> <span class="cl">Claude</span>
+<span class="kw">from</span> agno.tools.duckduckgo <span class="kw">import</span> <span class="cl">DuckDuckGoTools</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+    <span class="vr">tools</span><span class="op">=[</span><span class="cl">DuckDuckGoTools</span><span class="op">()],</span>
+    <span class="vr">instructions</span><span class="op">=</span><span class="st">"Use tables to display data."</span><span class="op">,</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span>
+    <span class="st">"Top 5 trending AI tools in 2025"</span><span class="op">,</span>
+    <span class="vr">stream</span><span class="op">=</span><span class="bl">True</span>
+<span class="op">)</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 8: CUSTOM TOOLS ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 24px;">Write Your Own Tool</h2>
+    <div class="two-col">
+      <div>
+        <div class="accent-list">
+          <div class="accent-item fade-up fade-up-2" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Any Python function can become a <strong>tool</strong></div>
+          </div>
+          <div class="accent-item fade-up fade-up-3" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>The agent reads the <strong>docstring</strong> to know when and how to use it</div>
+          </div>
+          <div class="accent-item fade-up fade-up-4" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Call APIs, query databases, run calculations &mdash; <strong>anything</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="code-frame fade-up fade-up-3" style="margin-top: 0;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">import</span> json<span class="op">,</span> urllib.parse<span class="op">,</span> urllib.request
+
+<span class="kw">def</span> <span class="fn">get_weather</span><span class="op">(</span><span class="vr">city</span><span class="op">:</span> <span class="cl">str</span><span class="op">)</span> <span class="op">-></span> <span class="cl">str</span><span class="op">:</span>
+    <span class="st">"""Get current weather for a city."""</span>
+    <span class="vr">q</span> <span class="op">=</span> urllib<span class="op">.</span>parse<span class="op">.</span>quote<span class="op">(</span><span class="vr">city</span><span class="op">)</span>
+    <span class="vr">geo</span> <span class="op">=</span> json<span class="op">.</span>loads<span class="op">(</span>urllib<span class="op">.</span>request<span class="op">.</span>urlopen<span class="op">(</span>
+        <span class="st">f"https://geocoding-api.open-meteo.com/v1/search?name=<span class="op">{</span>q<span class="op">}</span>&count=1"</span>
+    <span class="op">).</span>read<span class="op">())</span>
+    <span class="vr">lat</span> <span class="op">=</span> <span class="vr">geo</span><span class="op">[</span><span class="st">"results"</span><span class="op">][</span><span class="vr">0</span><span class="op">][</span><span class="st">"latitude"</span><span class="op">]</span>
+    <span class="vr">lon</span> <span class="op">=</span> <span class="vr">geo</span><span class="op">[</span><span class="st">"results"</span><span class="op">][</span><span class="vr">0</span><span class="op">][</span><span class="st">"longitude"</span><span class="op">]</span>
+    <span class="vr">weather</span> <span class="op">=</span> json<span class="op">.</span>loads<span class="op">(</span>urllib<span class="op">.</span>request<span class="op">.</span>urlopen<span class="op">(</span>
+        <span class="st">f"https://api.open-meteo.com/v1/forecast?latitude=<span class="op">{</span>lat<span class="op">}</span>&longitude=<span class="op">{</span>lon<span class="op">}</span>"</span>
+        <span class="st">f"&current=temperature_2m,wind_speed_10m"</span>
+    <span class="op">).</span>read<span class="op">())</span>
+    <span class="kw">return</span> json<span class="op">.</span>dumps<span class="op">({</span><span class="st">"city"</span><span class="op">:</span> <span class="vr">city</span><span class="op">,</span> <span class="st">"current"</span><span class="op">:</span> <span class="vr">weather</span><span class="op">[</span><span class="st">"current"</span><span class="op">]})</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+    <span class="vr">tools</span><span class="op">=[</span><span class="vr">get_weather</span><span class="op">],</span>
+<span class="op">)</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span><span class="st">"Weather in Tokyo?"</span><span class="op">)</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: MEMORY ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 24px;">Give Your Agent Memory</h2>
+    <div class="two-col" style="gap: 32px; align-items: start;">
+      <div>
+        <div class="accent-list">
+          <div class="accent-item fade-up fade-up-2" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Without memory, every conversation <strong>starts from scratch</strong></div>
+          </div>
+          <div class="accent-item fade-up fade-up-3" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>With memory, the agent <strong>remembers facts about you</strong> across sessions</div>
+          </div>
+          <div class="accent-item fade-up fade-up-4" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Just add a <strong>db</strong> and set <strong>enable_agentic_memory=True</strong></div>
+          </div>
+        </div>
+        <div style="margin-top: 20px;" class="fade-up fade-up-5">
+          <div style="font-size: 15px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">How it works</div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="background: var(--bg-white); border: 1.5px solid #E5E5E5; border-radius: 10px; padding: 12px 16px; font-size: 15px; text-align: center;">
+              <div style="font-weight: 700;">Tell it something</div>
+              <div style="color: var(--text-secondary); margin-top: 2px;">"I'm vegan"</div>
+            </div>
+            <div style="display: flex; align-items: center; color: #CCC; font-size: 22px;">&#x2192;</div>
+            <div style="background: var(--bg-white); border: 1.5px solid #E5E5E5; border-radius: 10px; padding: 12px 16px; font-size: 15px; text-align: center;">
+              <div style="font-weight: 700;">Agent stores it</div>
+              <div style="color: var(--text-secondary); margin-top: 2px;">Automatically</div>
+            </div>
+            <div style="display: flex; align-items: center; color: #CCC; font-size: 22px;">&#x2192;</div>
+            <div style="background: var(--bg-white); border: 1.5px solid #E5E5E5; border-radius: 10px; padding: 12px 16px; font-size: 15px; text-align: center;">
+              <div style="font-weight: 700;">Next session</div>
+              <div style="color: var(--text-secondary); margin-top: 2px;">Still knows you're vegan</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="code-frame fade-up fade-up-3" style="margin-top: 0; max-width: 100%;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.anthropic <span class="kw">import</span> <span class="cl">Claude</span>
+<span class="kw">from</span> agno.memory <span class="kw">import</span> <span class="cl">MemoryManager</span>
+<span class="kw">from</span> agno.db.sqlite <span class="kw">import</span> <span class="cl">SqliteDb</span>
+
+<span class="vr">db</span> <span class="op">=</span> <span class="cl">SqliteDb</span><span class="op">(</span><span class="vr">db_file</span><span class="op">=</span><span class="st">"agents.db"</span><span class="op">)</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+    <span class="vr">db</span><span class="op">=</span><span class="vr">db</span><span class="op">,</span>
+    <span class="vr">memory_manager</span><span class="op">=</span><span class="cl">MemoryManager</span><span class="op">(</span>
+        <span class="vr">model</span><span class="op">=</span><span class="cl">Claude</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"claude-sonnet-4-5-20250929"</span><span class="op">),</span>
+        <span class="vr">db</span><span class="op">=</span><span class="vr">db</span><span class="op">,</span>
+    <span class="op">),</span>
+    <span class="vr">enable_agentic_memory</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+
+<span class="cm"># Session 1: tell it about yourself</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span>
+    <span class="st">"I'm interested in AI stocks"</span><span class="op">,</span>
+    <span class="vr">user_id</span><span class="op">=</span><span class="st">"uzair"</span>
+<span class="op">)</span>
+
+<span class="cm"># Session 2: it still remembers</span>
+<span class="vr">agent</span><span class="op">.</span><span class="fn">print_response</span><span class="op">(</span>
+    <span class="st">"What stocks should I buy?"</span><span class="op">,</span>
+    <span class="vr">user_id</span><span class="op">=</span><span class="st">"uzair"</span>
+<span class="op">)</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 12: WHAT IS MCP? (EXPLAINER) ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1">What is MCP?</h2>
+    <div class="accent-list" style="margin-bottom: 28px;">
+      <div class="accent-item fade-up fade-up-2">
+        <div class="accent-bar"></div>
+        <div><strong>Model Context Protocol</strong> &mdash; an open standard created by Anthropic</div>
+      </div>
+      <div class="accent-item fade-up fade-up-3">
+        <div class="accent-bar"></div>
+        <div>Think of it like a <strong>USB port for AI</strong> &mdash; one standard plug, works with everything</div>
+      </div>
+      <div class="accent-item fade-up fade-up-4">
+        <div class="accent-bar"></div>
+        <div>Instead of building custom tools, just <strong>point your agent at an MCP server</strong> and it gets access to all its tools</div>
+      </div>
+    </div>
+    <div class="feature-grid fade-up fade-up-5">
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128268;</div>
+        <div class="feature-card-title">Plug &amp; Play</div>
+        <div class="feature-card-desc">Connect to any MCP server with one URL</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#127758;</div>
+        <div class="feature-card-title">Growing Ecosystem</div>
+        <div class="feature-card-desc">GitHub, Slack, databases, docs &mdash; more every day</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card-icon">&#128247;</div>
+        <div class="feature-card-title">No Extra Code</div>
+        <div class="feature-card-desc">The server exposes tools. Your agent discovers them automatically.</div>
+      </div>
+    </div>
+    <p class="code-note fade-up fade-up-5" style="margin-top: 16px;">Without MCP: you build each tool yourself. With MCP: someone else already built it.</p>
+  </div>
+
+  <!-- ====== SLIDE 13: MCP CODE ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 20px;">MCP in Code: Playwright</h2>
+    <div class="two-col" style="gap: 32px; align-items: start;">
+      <div>
+        <div class="slide-label fade-up fade-up-2">Setup (one time)</div>
+        <div class="setup-steps" style="margin-bottom: 16px;">
+          <div class="setup-step fade-up fade-up-2">
+            <div class="setup-number">1</div>
+            <div class="setup-content">
+              Install Node.js<br>
+              <code>brew install node</code>
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-3">
+            <div class="setup-number">2</div>
+            <div class="setup-content">
+              Install Playwright MCP<br>
+              <code>npx @playwright/mcp@latest</code>
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-4">
+            <div class="setup-number">3</div>
+            <div class="setup-content">
+              Install Agno with MCP<br>
+              <code>pip install agno[mcp]</code>
+            </div>
+          </div>
+        </div>
+        <p class="code-note fade-up fade-up-5">Your agent can now browse the web, click buttons, fill forms, and scrape pages.</p>
+      </div>
+      <div>
+        <div class="code-frame fade-up fade-up-3" style="margin-top: 0; max-width: 100%;">
+          <div class="code-titlebar">
+            <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          </div>
+          <div class="code-body">
+<pre><span class="kw">import</span> asyncio
+<span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.openai <span class="kw">import</span> <span class="cl">OpenAIChat</span>
+<span class="kw">from</span> agno.tools.mcp <span class="kw">import</span> <span class="cl">MCPTools</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">name</span><span class="op">=</span><span class="st">"Browser Agent"</span><span class="op">,</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">OpenAIChat</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"gpt-4o-mini"</span><span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+    <span class="vr">tools</span><span class="op">=[</span>
+        <span class="cl">MCPTools</span><span class="op">(</span>
+            <span class="vr">command</span><span class="op">=</span><span class="st">"npx @playwright/mcp@latest"</span><span class="op">,</span>
+            <span class="vr">timeout_seconds</span><span class="op">=</span><span class="vr">30</span><span class="op">,</span>
+        <span class="op">)</span>
+    <span class="op">],</span>
+<span class="op">)</span>
+
+asyncio<span class="op">.</span><span class="fn">run</span><span class="op">(</span><span class="vr">agent</span><span class="op">.</span><span class="fn">aprint_response</span><span class="op">(</span>
+    <span class="st">"Go to news.ycombinator.com and get the top post"</span>
+<span class="op">))</span></pre>
+          </div>
+        </div>
+        <div class="accent-item fade-up fade-up-4" style="font-size: 17px; margin-top: 12px;">
+          <div class="accent-bar"></div>
+          <div><code style="font-family: 'JetBrains Mono', monospace; background: var(--code-bg); color: #C3E88D; padding: 2px 8px; border-radius: 4px; font-size: 15px;">command</code> = the same command you'd run in your terminal to start the MCP server</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: FILESYSTEM MCP ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 20px;">MCP in Code: Filesystem</h2>
+    <div class="two-col" style="gap: 32px; align-items: start;">
+      <div>
+        <div class="slide-label fade-up fade-up-2">Zero setup. No accounts. No tokens.</div>
+        <div class="accent-list" style="margin-top: 12px;">
+          <div class="accent-item fade-up fade-up-2" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Reads, searches, and analyzes <strong>files on your machine</strong></div>
+          </div>
+          <div class="accent-item fade-up fade-up-3" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>You choose <strong>which directories</strong> the agent can access</div>
+          </div>
+          <div class="accent-item fade-up fade-up-4" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Great for <strong>codebase Q&A</strong>, log analysis, doc summaries</div>
+          </div>
+        </div>
+        <p class="code-note fade-up fade-up-5" style="margin-top: 16px;">The simplest MCP example &mdash; just point it at a folder and ask questions.</p>
+      </div>
+      <div class="code-frame fade-up fade-up-3" style="margin-top: 0; max-width: 100%;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">import</span> asyncio
+<span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.openai <span class="kw">import</span> <span class="cl">OpenAIChat</span>
+<span class="kw">from</span> agno.tools.mcp <span class="kw">import</span> <span class="cl">MCPTools</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">name</span><span class="op">=</span><span class="st">"File Explorer"</span><span class="op">,</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">OpenAIChat</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"gpt-4o-mini"</span><span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+    <span class="vr">tools</span><span class="op">=[</span>
+        <span class="cl">MCPTools</span><span class="op">(</span>
+            <span class="vr">command</span><span class="op">=</span><span class="st">"npx -y @modelcontextprotocol/server-filesystem ."</span><span class="op">,</span>
+        <span class="op">)</span>
+    <span class="op">],</span>
+<span class="op">)</span>
+
+asyncio<span class="op">.</span><span class="fn">run</span><span class="op">(</span><span class="vr">agent</span><span class="op">.</span><span class="fn">aprint_response</span><span class="op">(</span>
+    <span class="st">"What files are here? Summarize the project."</span>
+<span class="op">))</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: GITHUB MCP ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(30px,4vw,48px); margin-bottom: 20px;">MCP in Code: GitHub</h2>
+    <div class="two-col" style="gap: 32px; align-items: start;">
+      <div>
+        <div class="slide-label fade-up fade-up-2">Get a GitHub PAT</div>
+        <div class="setup-steps" style="margin-bottom: 16px;">
+          <div class="setup-step fade-up fade-up-2">
+            <div class="setup-number">1</div>
+            <div class="setup-content" style="font-size: 17px;">
+              Go to <strong>github.com</strong> &rarr; Profile &rarr; <strong>Settings</strong>
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-3">
+            <div class="setup-number">2</div>
+            <div class="setup-content" style="font-size: 17px;">
+              Scroll to <strong>Developer settings</strong>
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-3">
+            <div class="setup-number">3</div>
+            <div class="setup-content" style="font-size: 17px;">
+              <strong>Personal access tokens</strong> &rarr; <strong>Fine-grained</strong> &rarr; Generate
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-4">
+            <div class="setup-number">4</div>
+            <div class="setup-content" style="font-size: 17px;">
+              Name it, set expiry, grant <strong>repo</strong> access &rarr; copy token
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-5">
+            <div class="setup-number">5</div>
+            <div class="setup-content" style="font-size: 17px;">
+              Set it in terminal<br>
+              <code>export GITHUB_TOKEN=github_pat_...</code>
+            </div>
+          </div>
+          <div class="setup-step fade-up fade-up-5">
+            <div class="setup-number">6</div>
+            <div class="setup-content" style="font-size: 17px;">
+              Install Agno with MCP<br>
+              <code>pip install agno[mcp]</code>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="code-frame fade-up fade-up-3" style="margin-top: 0; max-width: 100%;">
+          <div class="code-titlebar">
+            <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+          </div>
+          <div class="code-body">
+<pre><span class="kw">import</span> os<span class="op">,</span> asyncio
+<span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.openai <span class="kw">import</span> <span class="cl">OpenAIChat</span>
+<span class="kw">from</span> agno.tools.mcp <span class="kw">import</span> <span class="cl">MCPTools</span><span class="op">,</span> <span class="cl">StreamableHTTPClientParams</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">name</span><span class="op">=</span><span class="st">"GitHub Agent"</span><span class="op">,</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">OpenAIChat</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"gpt-4o-mini"</span><span class="op">),</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+    <span class="vr">tools</span><span class="op">=[</span>
+        <span class="cl">MCPTools</span><span class="op">(</span>
+            <span class="vr">transport</span><span class="op">=</span><span class="st">"streamable-http"</span><span class="op">,</span>
+            <span class="vr">server_params</span><span class="op">=</span><span class="cl">StreamableHTTPClientParams</span><span class="op">(</span>
+                <span class="vr">url</span><span class="op">=</span><span class="st">"https://api.githubcopilot.com/mcp/"</span><span class="op">,</span>
+                <span class="vr">headers</span><span class="op">={</span><span class="st">"Authorization"</span><span class="op">:</span> <span class="st">f"Bearer <span class="op">{</span>os.getenv('GITHUB_TOKEN')<span class="op">}</span>"</span><span class="op">},</span>
+            <span class="op">),</span>
+        <span class="op">)</span>
+    <span class="op">],</span>
+<span class="op">)</span>
+
+asyncio<span class="op">.</span><span class="fn">run</span><span class="op">(</span><span class="vr">agent</span><span class="op">.</span><span class="fn">aprint_response</span><span class="op">(</span>
+    <span class="st">"List the top 5 open issues on agno-agi/agno"</span>
+<span class="op">))</span></pre>
+          </div>
+        </div>
+        <div class="accent-item fade-up fade-up-4" style="font-size: 17px; margin-top: 12px;">
+          <div class="accent-bar"></div>
+          <div>Hosted by GitHub &mdash; just your PAT. No Docker, no npx, no local server.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: LIVE DEMO INTRO ====== -->
+  <div class="slide demo-slide">
+    <div class="demo-bg-glyph">&#127828;</div>
+    <div class="slide-label fade-up fade-up-1">Live Demo</div>
+    <div class="demo-prompt fade-up fade-up-2">Let's build a<br><span class="highlight">Calorie Counter</span></div>
+    <p class="demo-sub fade-up fade-up-3">Upload a photo of your food &rarr; get calories &amp; macros back</p>
+    <div style="display: flex; gap: 20px; justify-content: center; margin-top: 28px;">
+      <div class="feature-card fade-up fade-up-4" style="text-align: center; min-width: 160px;">
+        <div class="feature-card-icon">&#128248;</div>
+        <div class="feature-card-title">Vision</div>
+        <div class="feature-card-desc">Model sees your food photo</div>
+      </div>
+      <div class="feature-card fade-up fade-up-4" style="text-align: center; min-width: 160px;">
+        <div class="feature-card-icon">&#128202;</div>
+        <div class="feature-card-title">Markdown Tables</div>
+        <div class="feature-card-desc">Clean calorie &amp; macro breakdown</div>
+      </div>
+      <div class="feature-card fade-up fade-up-4" style="text-align: center; min-width: 160px;">
+        <div class="feature-card-icon">&#127760;</div>
+        <div class="feature-card-title">AgentOS</div>
+        <div class="feature-card-desc">Chat UI where you upload images</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: CALORIE COUNTER CODE ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(28px,3.5vw,44px); margin-bottom: 16px;">Calorie Counter Agent</h2>
+    <div class="two-col" style="gap: 32px; align-items: start;">
+      <div>
+        <div class="accent-list">
+          <div class="accent-item fade-up fade-up-2" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Uses <strong>vision</strong> &mdash; the model sees images you upload</div>
+          </div>
+          <div class="accent-item fade-up fade-up-3" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div>Wrapped in <strong>AgentOS</strong> &mdash; chat UI handles image uploads for you</div>
+          </div>
+          <div class="accent-item fade-up fade-up-4" style="font-size: 19px;">
+            <div class="accent-bar"></div>
+            <div><strong>Markdown tables</strong> &mdash; clean calories &amp; macro breakdown</div>
+          </div>
+        </div>
+        <div class="setup-steps fade-up fade-up-5" style="margin-top: 20px;">
+          <div class="setup-step">
+            <div class="setup-number">1</div>
+            <div class="setup-content">
+              <code>python calorie_counter.py</code>
+            </div>
+          </div>
+          <div class="setup-step" style="margin-top: 8px;">
+            <div class="setup-number">2</div>
+            <div class="setup-content">
+              Open <strong style="color: var(--red);">os.agno.com</strong> &rarr; upload a food photo &rarr; done
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="code-frame fade-up fade-up-3" style="margin-top: 0; max-width: 100%;">
+        <div class="code-titlebar">
+          <div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div>
+        </div>
+        <div class="code-body">
+<pre><span class="kw">from</span> agno.agent <span class="kw">import</span> <span class="cl">Agent</span>
+<span class="kw">from</span> agno.models.openai <span class="kw">import</span> <span class="cl">OpenAIChat</span>
+<span class="kw">from</span> agno.os <span class="kw">import</span> <span class="cl">AgentOS</span>
+
+<span class="vr">agent</span> <span class="op">=</span> <span class="cl">Agent</span><span class="op">(</span>
+    <span class="vr">model</span><span class="op">=</span><span class="cl">OpenAIChat</span><span class="op">(</span><span class="vr">id</span><span class="op">=</span><span class="st">"gpt-4o-mini"</span><span class="op">),</span>
+    <span class="vr">instructions</span><span class="op">=</span><span class="st">"""You are a calorie counting assistant.
+When a user sends a food image, analyze it and respond with:
+- Food name
+- Estimated calories
+- Protein, carbs, and fat in grams
+Be concise. Use a table for the macros."""</span><span class="op">,</span>
+    <span class="vr">markdown</span><span class="op">=</span><span class="bl">True</span><span class="op">,</span>
+<span class="op">)</span>
+
+<span class="vr">app</span> <span class="op">=</span> <span class="cl">AgentOS</span><span class="op">(</span>
+    <span class="vr">id</span><span class="op">=</span><span class="st">"calorie-counter"</span><span class="op">,</span>
+    <span class="vr">agents</span><span class="op">=[</span><span class="vr">agent</span><span class="op">],</span>
+<span class="op">).</span><span class="fn">get_app</span><span class="op">()</span>
+
+<span class="kw">if</span> <span class="vr">__name__</span> <span class="op">==</span> <span class="st">"__main__"</span><span class="op">:</span>
+    <span class="kw">import</span> uvicorn
+    uvicorn<span class="op">.</span><span class="fn">run</span><span class="op">(</span><span class="vr">app</span><span class="op">,</span> <span class="vr">host</span><span class="op">=</span><span class="st">"0.0.0.0"</span><span class="op">,</span> <span class="vr">port</span><span class="op">=</span><span class="vr">8000</span><span class="op">)</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: WHERE TO GO NEXT ====== -->
+  <div class="slide">
+    <h2 class="slide-title fade-up fade-up-1" style="font-size: clamp(32px,4vw,48px); margin-bottom: 20px;">Where to Go Next</h2>
+    <div class="next-grid">
+      <div class="next-card fade-up fade-up-2">
+        <div class="next-card-number">Level Up</div>
+        <div class="next-card-title">Knowledge & RAG</div>
+        <div class="next-card-desc">Give agents your data &mdash; PDFs, docs, databases</div>
+      </div>
+      <div class="next-card fade-up fade-up-2">
+        <div class="next-card-number">Level Up</div>
+        <div class="next-card-title">Reasoning</div>
+        <div class="next-card-desc">Chain-of-thought problem solving</div>
+      </div>
+      <div class="next-card fade-up fade-up-3">
+        <div class="next-card-number">Level Up</div>
+        <div class="next-card-title">Teams</div>
+        <div class="next-card-desc">Multiple agents collaborating together</div>
+      </div>
+      <div class="next-card fade-up fade-up-3">
+        <div class="next-card-number">Level Up</div>
+        <div class="next-card-title">Workflows</div>
+        <div class="next-card-desc">Deterministic multi-agent pipelines</div>
+      </div>
+    </div>
+    <div class="closing-row fade-up fade-up-4">
+      <div class="closing-qr-card">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fgithub.com%2Fagno-agi%2Fagno&color=0A0A0A&bgcolor=FFFFFF" alt="GitHub QR">
+        <div class="closing-qr-label">GitHub</div>
+        <div class="closing-qr-sub">agno-agi/agno</div>
+      </div>
+      <div class="closing-qr-card">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fdocs.agno.com&color=0A0A0A&bgcolor=FFFFFF" alt="Docs QR">
+        <div class="closing-qr-label">Docs</div>
+        <div class="closing-qr-sub">docs.agno.com</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE: THANK YOU ====== -->
+  <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+    <div class="closing-thanks fade-up fade-up-1" style="font-size: clamp(44px, 6vw, 80px); margin-bottom: 12px;">Thank you!</div>
+    <div class="fade-up fade-up-1" style="font-size: clamp(18px, 2.2vw, 26px); font-weight: 500; color: var(--text-secondary); margin-bottom: 32px;">Now go build something the world hasn't seen yet.</div>
+    <div class="closing-qr-card highlight fade-up fade-up-2" style="padding: 24px 32px 20px;">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fx.com%2Fuzaxirr&color=E8470B&bgcolor=FFFFFF" alt="Follow on X QR" style="width: 140px; height: 140px;">
+      <div class="closing-qr-label" style="color: var(--red); font-size: 18px;">Follow me on X</div>
+      <div class="closing-qr-sub" style="font-size: 15px;">@uzaxirr</div>
+    </div>
+    <div class="closing-cta fade-up fade-up-3" style="margin-top: 24px;">Share what you build &mdash; tag <strong style="color: var(--red);">@uzaxirr</strong></div>
+    <div class="fade-up fade-up-4" style="margin-top: 20px; font-size: 16px; color: var(--text-secondary);">Uzair Ali</div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav-bar">
+  <div class="nav-name">Uzair Ali</div>
+  <div class="slide-counter"><span id="current">1</span> / <span id="total"></span></div>
+</div>
+
+<div class="key-hint" id="keyHint">
+  <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to navigate
+</div>
+
+<div class="touch-left" id="touchLeft"></div>
+<div class="touch-right" id="touchRight"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  const progress = document.getElementById('progress');
+  const currentEl = document.getElementById('current');
+  const totalEl = document.getElementById('total');
+  const keyHint = document.getElementById('keyHint');
+  let current = 0;
+
+  totalEl.textContent = total;
+
+  function goTo(n) {
+    if (n < 0 || n >= total || n === current) return;
+    const prev = current;
+    const dir = n > prev ? 1 : -1;
+
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add(dir > 0 ? 'exit-left' : 'exit-right');
+
+    current = n;
+    slides[current].style.transition = 'none';
+    slides[current].classList.remove('exit-left', 'exit-right');
+    slides[current].style.transform = dir > 0 ? 'translateX(40px)' : 'translateX(-40px)';
+    slides[current].offsetHeight;
+    slides[current].style.transition = '';
+    slides[current].classList.add('active');
+    slides[current].style.transform = '';
+
+    setTimeout(() => { slides[prev].classList.remove('exit-left', 'exit-right'); }, 500);
+
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    currentEl.textContent = current + 1;
+    if (current > 0) keyHint.classList.add('hidden');
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  document.getElementById('touchLeft').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('touchRight').addEventListener('click', () => goTo(current + 1));
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) { diff > 0 ? goTo(current + 1) : goTo(current - 1); }
+  });
+
+  progress.style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>
